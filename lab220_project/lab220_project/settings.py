@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-=)o_&$98%ffvfpda8ax4s5z#x!3@ejz4$zx)-nz!nn$tolh+vb
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["mutansar.vercel.app"]
 
 
 # Application definition
