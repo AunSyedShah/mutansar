@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ vendor.store_name }} Storefront | MultiMarket{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- Vendor Header Card -->
+    <div class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs mb-8">
+        <!-- Store Banner -->
+        <div class="h-44 sm:h-56 bg-linear-to-r from-brand-600 to-indigo-800 relative">
+            {% if vendor.banner %}
+            <img src="{{ vendor.banner.url }}" alt="{{ vendor.store_name }} banner" class="w-full h-full object-cover">
+            {% else %}
+            <div class="w-full h-full flex items-center justify-center opacity-15">
+                <i class="fa-solid fa-shop text-9xl text-white"></i>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Store Info Profile -->
+        <div class="p-6 sm:p-8 relative -mt-16 sm:-mt-20 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
+            <div class="flex flex-col sm:flex-row items-start sm:items-end gap-5">
+                <!-- Store Logo -->
+                <div class="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-white p-1 shadow-md border border-slate-200 shrink-0 overflow-hidden">
+                    {% if vendor.logo %}
+                    <img src="{{ vendor.logo.url }}" alt="{{ vendor.store_name }}" class="w-full h-full object-cover rounded-xl">
+                    {% else %}
+                    <div class="w-full h-full bg-brand-50 text-brand-600 flex items-center justify-center text-3xl font-bold rounded-xl">
+                        {{ vendor.store_name|make_list|first|upper }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-2xl font-bold text-slate-900">{{ vendor.store_name }}</h1>
+                        <span class="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <i class="fa-solid fa-shield-check text-emerald-500"></i> Verified Seller
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1 max-w-xl leading-relaxed">
+                        {{ vendor.description|default:"Welcome to our storefront on MultiMarket!" }}
+                    </p>
+                </div>
+            </div>
+
+            <div class="text-xs text-slate-400 self-start sm:self-end">
+                <span>Member since {{ vendor.created_at|date:"M Y" }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vendor's Products Section -->
+    <div class="flex items-center justify-between pb-4 border-b border-slate-200 mb-6">
+        <h2 class="text-lg font-bold text-slate-900">Products from {{ vendor.store_name }} ({{ products.count }})</h2>
+    </div>
+
+    {% if products %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {% for product in products %}
+        <div class="group bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-md transition flex flex-col justify-between">
+            <div>
+                <div class="aspect-square bg-slate-100 relative overflow-hidden">
+                    {% if product.primary_image %}
+                    <img src="{{ product.primary_image.url }}" alt="{{ product.title }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                    {% else %}
+                    <div class="w-full h-full flex flex-col items-center justify-center text-slate-300">
+                        <i class="fa-regular fa-image text-3xl mb-1"></i>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="p-4">
+                    {% if product.category %}
+                    <span class="text-[10px] text-slate-400 block mb-1">{{ product.category.name }}</span>
+                    {% endif %}
+                    <h3 class="font-semibold text-slate-900 text-sm line-clamp-1 group-hover:text-brand-600 transition">
+                        <a href="{% url 'products:detail' product.slug %}">{{ product.title }}</a>
+                    </h3>
+                </div>
+            </div>
+
+            <div class="p-4 pt-0 border-t border-slate-100 mt-2 flex items-center justify-between">
+                <span class="text-base font-bold text-slate-900">${{ product.current_price }}</span>
+                <form action="{% url 'orders:cart_add' product.id %}" method="POST">
+                    {% csrf_token %}
+                    <button type="submit" class="p-1.5 px-3 bg-brand-50 text-brand-600 hover:bg-brand-600 hover:text-white rounded-lg transition text-xs font-semibold">
+                        Add
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white p-12 text-center rounded-2xl border border-dashed border-slate-200 text-slate-400">
+        <i class="fa-solid fa-box-archive text-4xl mb-2 text-slate-300"></i>
+        <p class="text-xs">This vendor has not published any active listings yet.</p>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

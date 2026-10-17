@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}Application Under Review | MultiMarket{% endblock %}
+
+{% block content %}
+<div class="min-h-[70vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full bg-white p-8 rounded-2xl shadow-sm border border-slate-200 text-center space-y-5">
+        <div class="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto">
+            <i class="fa-solid fa-hourglass-half text-2xl"></i>
+        </div>
+        
+        <h2 class="text-2xl font-bold tracking-tight text-slate-900">Application Under Review</h2>
+        
+        <p class="text-xs text-slate-600 leading-relaxed">
+            Thank you for registering your store, <strong class="text-slate-900 font-semibold">{{ request.user.vendor_profile.store_name }}</strong>!
+            Our administrative team reviews all new vendor applications to maintain marketplace quality.
+        </p>
+
+        <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl text-left text-xs text-slate-500 space-y-2">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-check text-emerald-500"></i> Account credentials created
+            </div>
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-circle-dot text-amber-500"></i> Platform Owner Approval (Pending)
+            </div>
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-lock text-slate-400"></i> Product listing unlocked once approved
+            </div>
+        </div>
+
+        <div class="pt-4 flex flex-col gap-2">
+            <a href="{% url 'home' %}" class="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs rounded-lg transition">
+                Return to Storefront
+            </a>
+            <form method="POST" action="{% url 'accounts:logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="text-xs text-slate-400 hover:text-red-500 transition py-1">
+                    Sign Out
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

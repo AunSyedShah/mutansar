@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+
+{% block title %}Checkout | MultiMarket{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
+    <h1 class="text-2xl font-bold tracking-tight text-slate-900 mb-8">Review &amp; Place Your Order</h1>
+
+    <form method="POST" action="{% url 'orders:checkout' %}">
+        {% csrf_token %}
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            
+            <!-- Left 2 Cols: Shipping & Payment Method -->
+            <div class="lg:col-span-2 space-y-8">
+                
+                <!-- 1. Shipping Address Selection -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+                    <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+                        <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-brand-600 text-white flex items-center justify-center text-xs">1</span>
+                            Shipping Address
+                        </h2>
+                        <a href="{% url 'accounts:addresses' %}" target="_blank" class="text-xs text-brand-600 font-semibold hover:underline">
+                            + Add New Address
+                        </a>
+                    </div>
+
+                    {% if addresses %}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {% for addr in addresses %}
+                        <label class="relative flex p-4 rounded-xl border border-slate-200 cursor-pointer hover:border-brand-500 transition focus-within:border-brand-500">
+                            <input type="radio" name="address_id" value="{{ addr.id }}" {% if addr.is_default or forloop.first %}checked{% endif %}
+                                   class="h-4 w-4 mt-0.5 text-brand-600 border-slate-300 focus:ring-brand-500">
+                            <div class="ml-3 text-xs">
+                                <span class="font-bold text-slate-900 block">{{ addr.full_name }}</span>
+                                <span class="text-slate-500 block mt-0.5">{{ addr.phone }}</span>
+                                <span class="text-slate-600 block mt-1 leading-relaxed">
+                                    {{ addr.street_address }}{% if addr.apartment %}, {{ addr.apartment }}{% endif %}<br>
+                                    {{ addr.city }}, {{ addr.state }} {{ addr.postal_code }}
+                                </span>
+                            </div>
+                        </label>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="p-6 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                        <p class="text-xs text-slate-500 mb-3">You don't have any saved shipping addresses yet.</p>
+                        <a href="{% url 'accounts:addresses' %}" class="inline-block py-2 px-4 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-semibold">
+                            Add Address First
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- 2. Payment Method -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+                    <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2 pb-4 border-b border-slate-100 mb-4">
+                        <span class="w-6 h-6 rounded-full bg-brand-600 text-white flex items-center justify-center text-xs">2</span>
+                        Payment Method
+                    </h2>
+
+                    <div class="space-y-3">
+                        <label class="flex items-center p-4 rounded-xl border border-slate-200 cursor-pointer hover:border-brand-500 transition">
+                            <input type="radio" name="payment_method" value="cod" checked class="h-4 w-4 text-brand-600 border-slate-300 focus:ring-brand-500">
+                            <div class="ml-3">
+                                <span class="text-xs font-bold text-slate-900 block flex items-center gap-2">
+                                    <i class="fa-solid fa-truck text-emerald-600"></i> Cash On Delivery (COD)
+                                </span>
+                                <span class="text-[11px] text-slate-500">Pay directly when your packages arrive at your doorstep</span>
+                            </div>
+                        </label>
+
+                        <label class="flex items-center p-4 rounded-xl border border-slate-200 cursor-pointer hover:border-brand-500 transition">
+                            <input type="radio" name="payment_method" value="card_mock" class="h-4 w-4 text-brand-600 border-slate-300 focus:ring-brand-500">
+                            <div class="ml-3">
+                                <span class="text-xs font-bold text-slate-900 block flex items-center gap-2">
+                                    <i class="fa-regular fa-credit-card text-brand-600"></i> Credit / Debit Card (Instant Demo Payment)
+                                </span>
+                                <span class="text-[11px] text-slate-500">Simulates instant online payment confirmation for this order</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 3. Packages Review -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+                    <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2 pb-4 border-b border-slate-100 mb-4">
+                        <span class="w-6 h-6 rounded-full bg-brand-600 text-white flex items-center justify-center text-xs">3</span>
+                        Packages Breakdown ({{ vendor_groups|length }} Seller{{ vendor_groups|length|pluralize }})
+                    </h2>
+
+                    <div class="space-y-4">
+                        {% for vendor, vitems in vendor_groups.items %}
+                        <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 text-xs">
+                            <div class="font-bold text-slate-900 mb-2 flex items-center gap-1.5">
+                                <i class="fa-solid fa-shop text-brand-600"></i> {{ vendor.store_name }}
+                            </div>
+                            <ul class="space-y-1.5 text-slate-600">
+                                {% for item in vitems %}
+                                <li class="flex justify-between">
+                                    <span>{{ item.quantity }}x {{ item.product.title }}</span>
+                                    <span class="font-semibold text-slate-900">${{ item.line_total }}</span>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right 1 Col: Summary & Confirm Button -->
+            <div>
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-4 sticky top-24">
+                    <h2 class="text-base font-bold text-slate-900 pb-3 border-b border-slate-100">Payment Breakdown</h2>
+
+                    <div class="space-y-2 text-xs">
+                        <div class="flex justify-between text-slate-600">
+                            <span>Subtotal</span>
+                            <span class="font-semibold text-slate-900">${{ cart.total_price }}</span>
+                        </div>
+                        <div class="flex justify-between text-slate-600">
+                            <span>Shipping</span>
+                            <span class="font-semibold text-emerald-600">FREE</span>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-slate-100 pt-3 flex justify-between items-baseline">
+                        <span class="text-sm font-bold text-slate-900">Total Due</span>
+                        <span class="text-2xl font-black text-brand-600">${{ cart.total_price }}</span>
+                    </div>
+
+                    <div class="pt-2">
+                        <button type="submit" {% if not addresses %}disabled{% endif %} class="w-full py-3.5 px-4 bg-brand-600 hover:bg-brand-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl transition shadow-xs flex items-center justify-center gap-2">
+                            Place Multi-Vendor Order
+                        </button>
+                    </div>
+
+                    <p class="text-[11px] text-slate-400 text-center leading-relaxed">
+                        By placing this order, separate sub-orders will be dispatched to each respective seller.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </form>
+
+</div>
+{% endblock %}

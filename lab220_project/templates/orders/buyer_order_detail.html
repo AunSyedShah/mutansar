@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block title %}Order #{{ order.id }} Details | MultiMarket{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
+    <div class="mb-6">
+        <a href="{% url 'orders:buyer_orders' %}" class="text-xs text-brand-600 font-semibold hover:underline">&larr; Back to Order History</a>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-2">
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Order #{{ order.id }}</h1>
+            <span class="text-xs text-slate-500">Placed on {{ order.created_at|date:"M d, Y, h:i A" }}</span>
+        </div>
+    </div>
+
+    <!-- Overview Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs text-xs">
+            <h3 class="font-bold text-slate-400 uppercase tracking-wider text-[10px] mb-2">Shipping Destination</h3>
+            {% if order.shipping_address %}
+            <p class="font-bold text-slate-900">{{ order.shipping_address.full_name }}</p>
+            <p class="text-slate-500 mt-1 leading-relaxed">
+                {{ order.shipping_address.street_address }}<br>
+                {{ order.shipping_address.city }}, {{ order.shipping_address.state }}<br>
+                Phone: {{ order.shipping_address.phone }}
+            </p>
+            {% else %}
+            <p class="text-slate-400">Address recorded on invoice</p>
+            {% endif %}
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs text-xs">
+            <h3 class="font-bold text-slate-400 uppercase tracking-wider text-[10px] mb-2">Payment Details</h3>
+            <p class="font-bold text-slate-900">{{ order.get_payment_method_display }}</p>
+            <p class="text-slate-500 mt-1">Status: <span class="capitalize font-semibold text-slate-700">{{ order.payment_status }}</span></p>
+            {% if order.payment_id %}
+            <p class="font-mono text-[10px] text-slate-400 mt-2">Ref: {{ order.payment_id }}</p>
+            {% endif %}
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs text-xs">
+            <h3 class="font-bold text-slate-400 uppercase tracking-wider text-[10px] mb-2">Order Total</h3>
+            <p class="text-2xl font-black text-brand-600">${{ order.total_amount }}</p>
+            <p class="text-slate-400 mt-1">Includes all vendor packages</p>
+        </div>
+    </div>
+
+    <!-- Detailed Packages Section -->
+    <div class="space-y-6">
+        <h2 class="text-base font-bold text-slate-900">Packages ({{ order.vendor_orders.count }})</h2>
+
+        {% for suborder in order.vendor_orders.all %}
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div>
+                    <span class="font-bold text-slate-900">{{ suborder.vendor.store_name }}</span>
+                    <a href="{% url 'products:vendor_storefront' suborder.vendor.slug %}" class="text-brand-600 ml-2 hover:underline">View Store</a>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-full font-semibold text-[11px]
+                        {% if suborder.status == 'delivered' %}bg-emerald-50 text-emerald-700 border border-emerald-200
+                        {% elif suborder.status == 'shipped' %}bg-indigo-50 text-brand-700 border border-indigo-200
+                        {% elif suborder.status == 'processing' %}bg-blue-50 text-blue-700 border border-blue-200
+                        {% else %}bg-amber-50 text-amber-700 border border-amber-200{% endif %}">
+                        {{ suborder.get_status_display }}
+                    </span>
+                    {% if suborder.tracking_number %}
+                    <span class="text-slate-500 font-mono text-[11px] bg-white px-2 py-0.5 rounded border border-slate-200">
+                        {{ suborder.courier_name }}: {{ suborder.tracking_number }}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="p-6 divide-y divide-slate-100 space-y-3">
+                {% for item in suborder.items.all %}
+                <div class="flex items-center justify-between pt-2 first:pt-0 text-xs">
+                    <div>
+                        <p class="font-semibold text-slate-900">{{ item.product_title }}</p>
+                        <p class="text-slate-400">${{ item.price }} x {{ item.quantity }}</p>
+                    </div>
+                    <span class="font-bold text-slate-900">${{ item.line_total }}</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="bg-slate-50/50 px-6 py-3 border-t border-slate-100 flex justify-between text-xs font-bold text-slate-800">
+                <span>Package Subtotal</span>
+                <span>${{ suborder.subtotal }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

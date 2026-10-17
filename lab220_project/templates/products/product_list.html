@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+
+{% block title %}Marketplace Catalog | MultiMarket{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- Breadcrumb & Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-6 border-b border-slate-200 gap-4">
+        <div>
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900">
+                {% if selected_category %}{{ selected_category.name }}
+                {% elif query %}Search Results for "{{ query }}"
+                {% else %}Explore Marketplace
+                {% endif %}
+            </h1>
+            <p class="text-xs text-slate-500 mt-1">
+                Showing {{ page_obj.paginator.count }} item{{ page_obj.paginator.count|pluralize }} from verified sellers
+            </p>
+        </div>
+
+        <!-- Sorting dropdown -->
+        <form method="GET" class="flex items-center gap-2">
+            {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
+            {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category.slug }}">{% endif %}
+            <label for="sort" class="text-xs text-slate-500 whitespace-nowrap">Sort by:</label>
+            <select name="sort" id="sort" onchange="this.form.submit()" class="text-xs bg-white border border-slate-300 rounded-lg py-1.5 px-3 focus:ring-1 focus:ring-brand-500 outline-none">
+                <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest First</option>
+                <option value="price_low" {% if sort == 'price_low' %}selected{% endif %}>Price: Low to High</option>
+                <option value="price_high" {% if sort == 'price_high' %}selected{% endif %}>Price: High to Low</option>
+            </select>
+        </form>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 mt-8">
+        
+        <!-- Sidebar Filters -->
+        <aside class="space-y-6">
+            <!-- Categories -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+                <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-3">Categories</h3>
+                <ul class="space-y-2 text-xs">
+                    <li>
+                        <a href="{% url 'products:list' %}" class="flex items-center justify-between {% if not selected_category %}text-brand-600 font-semibold{% else %}text-slate-600 hover:text-brand-600{% endif %}">
+                            <span>All Categories</span>
+                        </a>
+                    </li>
+                    {% for cat in categories %}
+                    <li>
+                        <a href="{% url 'products:list' %}?category={{ cat.slug }}" class="flex items-center justify-between {% if selected_category.slug == cat.slug %}text-brand-600 font-semibold{% else %}text-slate-600 hover:text-brand-600{% endif %}">
+                            <span>{{ cat.name }}</span>
+                            <span class="text-slate-400 text-[10px]">({{ cat.products.count }})</span>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Price Filter -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+                <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-3">Filter by Price</h3>
+                <form method="GET" class="space-y-3">
+                    {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
+                    {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category.slug }}">{% endif %}
+                    <div class="flex items-center gap-2">
+                        <input type="number" name="min_price" value="{{ request.GET.min_price|default:'' }}" placeholder="Min $" class="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded-lg outline-none">
+                        <span class="text-slate-400 text-xs">-</span>
+                        <input type="number" name="max_price" value="{{ request.GET.max_price|default:'' }}" placeholder="Max $" class="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded-lg outline-none">
+                    </div>
+                    <button type="submit" class="w-full py-1.5 bg-slate-900 text-white rounded-lg text-xs font-medium hover:bg-slate-800 transition">
+                        Apply Filter
+                    </button>
+                </form>
+            </div>
+        </aside>
+
+        <!-- Product Grid (3 cols) -->
+        <main class="lg:col-span-3">
+            {% if page_obj %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for product in page_obj %}
+                <div class="group bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-md transition flex flex-col justify-between">
+                    <div>
+                        <!-- Image Container -->
+                        <div class="aspect-square bg-slate-100 relative overflow-hidden">
+                            {% if product.primary_image %}
+                            <img src="{{ product.primary_image.url }}" alt="{{ product.title }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                            {% else %}
+                            <div class="w-full h-full flex flex-col items-center justify-center text-slate-300">
+                                <i class="fa-regular fa-image text-4xl mb-1"></i>
+                                <span class="text-[10px] font-medium">No Image</span>
+                            </div>
+                            {% endif %}
+
+                            {% if product.discount_price %}
+                            <span class="absolute top-2.5 left-2.5 bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">
+                                Sale
+                            </span>
+                            {% endif %}
+                        </div>
+
+                        <!-- Product Content -->
+                        <div class="p-4">
+                            <!-- Vendor Tag -->
+                            <div class="flex items-center justify-between mb-1">
+                                <a href="{% url 'products:vendor_storefront' product.vendor.slug %}" class="text-[11px] font-medium text-brand-600 hover:underline truncate max-w-[150px]">
+                                    <i class="fa-solid fa-shop text-[10px] mr-1"></i>{{ product.vendor.store_name }}
+                                </a>
+                                {% if product.category %}
+                                <span class="text-[10px] text-slate-400">{{ product.category.name }}</span>
+                                {% endif %}
+                            </div>
+
+                            <h3 class="font-semibold text-slate-900 text-sm line-clamp-1 group-hover:text-brand-600 transition">
+                                <a href="{% url 'products:detail' product.slug %}">{{ product.title }}</a>
+                            </h3>
+
+                            <p class="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
+                                {{ product.description }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Pricing & Cart Button -->
+                    <div class="p-4 pt-0 border-t border-slate-100 mt-3 flex items-center justify-between">
+                        <div>
+                            <span class="text-base font-bold text-slate-900">${{ product.current_price }}</span>
+                            {% if product.discount_price %}
+                            <span class="text-xs text-slate-400 line-through ml-1">${{ product.price }}</span>
+                            {% endif %}
+                        </div>
+
+                        <form action="{% url 'orders:cart_add' product.id %}" method="POST">
+                            {% csrf_token %}
+                            <button type="submit" class="p-2 bg-brand-50 text-brand-600 hover:bg-brand-600 hover:text-white rounded-lg transition text-xs font-semibold flex items-center gap-1.5 shadow-2xs">
+                                <i class="fa-solid fa-plus text-[10px]"></i> Add
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <div class="mt-8 flex justify-center gap-2">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}" class="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50">
+                    Previous
+                </a>
+                {% endif %}
+                <span class="px-3 py-1.5 bg-brand-50 border border-brand-200 text-brand-700 rounded-lg text-xs font-semibold">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                </span>
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}" class="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50">
+                    Next
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% else %}
+            <div class="bg-white p-12 text-center rounded-2xl border border-dashed border-slate-200 text-slate-400">
+                <i class="fa-solid fa-box-open text-4xl mb-3 text-slate-300"></i>
+                <h3 class="text-base font-semibold text-slate-700">No products found</h3>
+                <p class="text-xs text-slate-500 mt-1">Try adjusting your keyword search or category filters.</p>
+                <a href="{% url 'products:list' %}" class="mt-4 inline-block px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs rounded-lg transition">Clear Filters</a>
+            </div>
+            {% endif %}
+        </main>
+
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}Incoming Orders | Seller Portal{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-6 border-b border-slate-200 gap-4 mb-8">
+        <div>
+            <a href="{% url 'vendors:dashboard' %}" class="text-xs text-brand-600 font-semibold hover:underline">&larr; Back to Dashboard</a>
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900 mt-1">Fulfillment Orders</h1>
+            <p class="text-xs text-slate-500">Track packages, dispatch products, and manage delivery statuses</p>
+        </div>
+
+        <!-- Filter tabs -->
+        <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold overflow-x-auto">
+            <a href="{% url 'orders:vendor_orders' %}" class="px-3 py-1.5 rounded-lg {% if not status_filter %}bg-white text-slate-900 shadow-xs{% else %}text-slate-500 hover:text-slate-900{% endif %}">
+                All
+            </a>
+            <a href="?status=pending" class="px-3 py-1.5 rounded-lg {% if status_filter == 'pending' %}bg-white text-slate-900 shadow-xs{% else %}text-slate-500 hover:text-slate-900{% endif %}">
+                Pending
+            </a>
+            <a href="?status=processing" class="px-3 py-1.5 rounded-lg {% if status_filter == 'processing' %}bg-white text-slate-900 shadow-xs{% else %}text-slate-500 hover:text-slate-900{% endif %}">
+                Processing
+            </a>
+            <a href="?status=shipped" class="px-3 py-1.5 rounded-lg {% if status_filter == 'shipped' %}bg-white text-slate-900 shadow-xs{% else %}text-slate-500 hover:text-slate-900{% endif %}">
+                Shipped
+            </a>
+            <a href="?status=delivered" class="px-3 py-1.5 rounded-lg {% if status_filter == 'delivered' %}bg-white text-slate-900 shadow-xs{% else %}text-slate-500 hover:text-slate-900{% endif %}">
+                Delivered
+            </a>
+        </div>
+    </div>
+
+    <!-- Orders Table -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+        {% if vendor_orders %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
+                    <tr>
+                        <th class="py-3.5 px-4">Sub-Order #</th>
+                        <th class="py-3.5 px-4">Date</th>
+                        <th class="py-3.5 px-4">Customer</th>
+                        <th class="py-3.5 px-4">Items</th>
+                        <th class="py-3.5 px-4">Subtotal</th>
+                        <th class="py-3.5 px-4">Commission</th>
+                        <th class="py-3.5 px-4">Your Net Earnings</th>
+                        <th class="py-3.5 px-4">Fulfillment Status</th>
+                        <th class="py-3.5 px-4 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-slate-700">
+                    {% for suborder in vendor_orders %}
+                    <tr class="hover:bg-slate-50/50 transition">
+                        <td class="py-3.5 px-4 font-mono font-bold text-slate-900">#{{ suborder.id }}</td>
+                        <td class="py-3.5 px-4 text-slate-500">{{ suborder.created_at|date:"M d, Y" }}</td>
+                        <td class="py-3.5 px-4">
+                            <span class="font-semibold text-slate-900 block">{{ suborder.order.buyer.username }}</span>
+                            <span class="text-[11px] text-slate-400">{{ suborder.order.shipping_address.city }}</span>
+                        </td>
+                        <td class="py-3.5 px-4 text-slate-600">{{ suborder.items.count }} item{{ suborder.items.count|pluralize }}</td>
+                        <td class="py-3.5 px-4 font-medium text-slate-900">${{ suborder.subtotal }}</td>
+                        <td class="py-3.5 px-4 text-red-600 font-medium">-${{ suborder.commission_fee }}</td>
+                        <td class="py-3.5 px-4 font-bold text-emerald-600">${{ suborder.vendor_earnings }}</td>
+                        <td class="py-3.5 px-4">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold
+                                {% if suborder.status == 'delivered' %}bg-emerald-50 text-emerald-700 border border-emerald-200
+                                {% elif suborder.status == 'shipped' %}bg-indigo-50 text-brand-700 border border-indigo-200
+                                {% elif suborder.status == 'processing' %}bg-blue-50 text-blue-700 border border-blue-200
+                                {% else %}bg-amber-50 text-amber-700 border border-amber-200{% endif %}">
+                                {{ suborder.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="py-3.5 px-4 text-right">
+                            <a href="{% url 'orders:vendor_order_detail' suborder.id %}" class="px-3 py-1.5 bg-brand-50 hover:bg-brand-600 hover:text-white text-brand-600 font-semibold rounded-lg transition text-xs">
+                                Fulfill &rarr;
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-12 text-center text-slate-400">
+            <i class="fa-solid fa-clipboard-check text-4xl mb-3 text-slate-300"></i>
+            <h3 class="text-sm font-semibold text-slate-700">No orders to fulfill</h3>
+            <p class="text-xs text-slate-500 mt-1">When buyers order products from your store, they will appear here.</p>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

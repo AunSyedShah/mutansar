@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block title %}Earnings &amp; Payouts | Seller Portal{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
+    <div class="mb-8">
+        <a href="{% url 'vendors:dashboard' %}" class="text-xs text-brand-600 font-semibold hover:underline">&larr; Back to Dashboard</a>
+        <h1 class="text-2xl font-bold tracking-tight text-slate-900 mt-2">Earnings &amp; Payout Disbursements</h1>
+        <p class="text-xs text-slate-500">Track delivered order earnings and request bank withdrawals.</p>
+    </div>
+
+    <!-- Balance Stats -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+            <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Delivered Net Earnings</span>
+            <p class="text-3xl font-black text-slate-900 mt-1">${{ delivered_earnings }}</p>
+            <p class="text-[11px] text-slate-500 mt-1">Earnings accrued from completed and delivered orders</p>
+        </div>
+
+        <div class="bg-linear-to-br from-emerald-600 to-teal-700 text-white p-6 rounded-2xl shadow-xs flex flex-col justify-between">
+            <div>
+                <span class="text-emerald-100 text-[10px] uppercase font-bold tracking-wider">Available for Withdrawal</span>
+                <p class="text-3xl font-black mt-1">${{ available_balance }}</p>
+            </div>
+            <p class="text-[11px] text-emerald-100 mt-2">Delivered earnings minus all requested and approved disbursements</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Left 2 Cols: Payouts History -->
+        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+                <h2 class="text-sm font-bold text-slate-900">Withdrawal History</h2>
+            </div>
+
+            {% if payouts %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase text-[10px]">
+                        <tr>
+                            <th class="py-3 px-4">ID</th>
+                            <th class="py-3 px-4">Requested</th>
+                            <th class="py-3 px-4">Amount</th>
+                            <th class="py-3 px-4">Status</th>
+                            <th class="py-3 px-4">Reference / Receipt</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-slate-700">
+                        {% for payout in payouts %}
+                        <tr class="hover:bg-slate-50/50 transition">
+                            <td class="py-3 px-4 font-mono font-bold text-slate-900">#{{ payout.id }}</td>
+                            <td class="py-3 px-4 text-slate-500">{{ payout.requested_at|date:"M d, Y" }}</td>
+                            <td class="py-3 px-4 font-bold text-slate-900">${{ payout.amount }}</td>
+                            <td class="py-3 px-4">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold
+                                    {% if payout.status == 'paid' %}bg-emerald-50 text-emerald-700 border border-emerald-200
+                                    {% elif payout.status == 'approved' %}bg-blue-50 text-blue-700 border border-blue-200
+                                    {% elif payout.status == 'rejected' %}bg-red-50 text-red-700 border border-red-200
+                                    {% else %}bg-amber-50 text-amber-700 border border-amber-200{% endif %}">
+                                    {{ payout.get_status_display }}
+                                </span>
+                            </td>
+                            <td class="py-3 px-4 font-mono text-[11px] text-slate-500">
+                                {{ payout.transaction_reference|default:"Processing" }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="p-12 text-center text-slate-400">
+                <i class="fa-solid fa-receipt text-3xl mb-2 text-slate-300"></i>
+                <p class="text-xs">No payout requests on record.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right 1 Col: Request Withdrawal Form -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs h-fit space-y-4">
+            <h2 class="text-sm font-bold text-slate-900 pb-2 border-b border-slate-100 flex items-center gap-2">
+                <i class="fa-solid fa-paper-plane text-brand-600"></i> Request Payout
+            </h2>
+
+            {% if available_balance >= 10 %}
+            <form method="POST" action="{% url 'vendors:payouts' %}" class="space-y-4">
+                {% csrf_token %}
+                <div>
+                    <label for="{{ form.amount.id_for_label }}" class="block text-xs font-semibold text-slate-700 mb-1">
+                        Amount to Withdraw ($)
+                    </label>
+                    {{ form.amount }}
+                    <p class="text-[11px] text-slate-400 mt-1">Available: ${{ available_balance }} &bull; Min: $10.00</p>
+                </div>
+
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-[11px] text-slate-500 space-y-1">
+                    <p class="font-bold text-slate-700">Bank Destination:</p>
+                    <p>{{ vendor.bank_name|default:"No bank configured" }} - {{ vendor.bank_account_number }}</p>
+                    <a href="{% url 'vendors:settings' %}" class="text-brand-600 font-semibold hover:underline block pt-1">
+                        Edit bank details &rarr;
+                    </a>
+                </div>
+
+                <button type="submit" class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-xl transition shadow-xs">
+                    Submit Withdrawal Request
+                </button>
+            </form>
+            {% else %}
+            <div class="p-4 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-800 space-y-2">
+                <p class="font-bold flex items-center gap-1.5">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Minimum Threshold
+                </p>
+                <p class="leading-relaxed">
+                    You need at least <strong class="font-semibold">$10.00</strong> in available delivered earnings to request a bank payout. (Current: ${{ available_balance }})
+                </p>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}
